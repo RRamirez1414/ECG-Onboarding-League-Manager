@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateMatchDto } from './dto/create-match.dto';
@@ -13,6 +13,8 @@ export class MatchService {
   ) {}
 
   create(payload: CreateMatchDto): Promise<Match> {
+    this.assertDistinctTeams(payload.home, payload.away);
+
     const match = this.matchRepository.create({
       ...payload,
       homeScore: payload.home_score,
@@ -40,7 +42,14 @@ export class MatchService {
       ...(payload.played ? { played: new Date(payload.played) } : {}),
       ...(payload.location ? { location: payload.location } : {}),
     });
+    this.assertDistinctTeams(match.home, match.away);
     return this.matchRepository.save(match);
+  }
+
+  private assertDistinctTeams(home: string, away: string): void {
+    if (home === away) {
+      throw new BadRequestException('Home and away teams must be different');
+    }
   }
 
   async remove(id: string): Promise<void> {
