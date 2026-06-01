@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - postgres
+    container_name: league_manager_app
+    ports:
+      - '3001:3000'
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: apiuser
+      DB_PASSWORD: dbuser123
+      DB_NAME: league_manager
+  postgres:
+    image: postgres:16-alpine
+    container_name: league_manager_postgres
+    restart: always
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: apiuser
+      POSTGRES_PASSWORD: dbuser123
+      POSTGRES_DB: league_manager
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
