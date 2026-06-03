@@ -20,7 +20,7 @@ services:
     container_name: league_manager_postgres
     restart: always
     ports:
-      - '5434:5432'
+      - '5435:5432'
     environment:
       POSTGRES_USER: apiuser
       POSTGRES_PASSWORD: dbuser123

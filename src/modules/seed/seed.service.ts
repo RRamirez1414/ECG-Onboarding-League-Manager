@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Audit } from '../../database/entities/audit.entity';
 import { PersonRole } from '../../common/enums/person-role.enum';
 import { PersonStatus } from '../../common/enums/person-status.enum';
 import { TeamStatus } from '../../common/enums/team-status.enum';
 import { MatchService } from '../match/match.service';
 import { Member } from '../member/entities/member.entity';
+import { Staff } from '../staff/entities/staff.entity';
 import { TeamService } from '../team/team.service';
 import { Match } from '../match/entities/match.entity';
 import { Team } from '../team/entities/team.entity';
@@ -43,10 +45,14 @@ export class SeedService {
   constructor(
     @InjectRepository(Member)
     private readonly memberRepository: Repository<Member>,
+    @InjectRepository(Staff)
+    private readonly staffRepository: Repository<Staff>,
     @InjectRepository(Team)
     private readonly teamRepository: Repository<Team>,
     @InjectRepository(Match)
     private readonly matchRepository: Repository<Match>,
+    @InjectRepository(Audit)
+    private readonly auditRepository: Repository<Audit>,
     private readonly teamService: TeamService,
     private readonly matchService: MatchService,
   ) {}
@@ -57,6 +63,7 @@ export class SeedService {
     }
 
     const freeAgents = await this.createFreeAgents(4);
+    const referees = await this.createReferees(3);
     const teams: Team[] = [];
 
     for (const teamName of TEAM_NAMES) {
@@ -64,21 +71,25 @@ export class SeedService {
       teams.push(team);
     }
 
-    const matches = await this.createMatches(teams, 10);
+    const matches = await this.createMatches(teams, referees, 10);
 
     return {
       cleared: clearExisting,
       members: await this.memberRepository.count(),
+      staff: await this.staffRepository.count(),
       teams: teams.length,
       matches: matches.length,
       freeAgents: freeAgents.length,
+      audits: await this.auditRepository.count(),
     };
   }
 
   private async clearAll(): Promise<void> {
+    await this.auditRepository.createQueryBuilder().delete().execute();
     await this.matchRepository.createQueryBuilder().delete().execute();
     await this.teamRepository.createQueryBuilder().delete().execute();
     await this.memberRepository.createQueryBuilder().delete().execute();
+    await this.staffRepository.createQueryBuilder().delete().execute();
   }
 
   private async createFreeAgents(count: number): Promise<Member[]> {
@@ -92,6 +103,14 @@ export class SeedService {
       );
     }
     return agents;
+  }
+
+  private async createReferees(count: number): Promise<Staff[]> {
+    const referees: Staff[] = [];
+    for (let i = 0; i < count; i += 1) {
+      referees.push(await this.createStaff(PersonRole.STAFF));
+    }
+    return referees;
   }
 
   private async createTeamWithSquad(name: string): Promise<Team> {
@@ -128,7 +147,11 @@ export class SeedService {
     return team;
   }
 
-  private async createMatches(teams: Team[], count: number): Promise<Match[]> {
+  private async createMatches(
+    teams: Team[],
+    referees: Staff[],
+    count: number,
+  ): Promise<Match[]> {
     const matches: Match[] = [];
     const usedPairs = new Set<string>();
 
@@ -162,6 +185,7 @@ export class SeedService {
           away_score: awayScore,
           played: this.randomPastDate(daysAgo).toISOString(),
           location: this.pick(LOCATIONS),
+          referee: this.pick(referees).id,
         }),
       );
     }
@@ -187,6 +211,23 @@ export class SeedService {
       teamId: null,
     });
     return this.memberRepository.save(member);
+  }
+
+  private async createStaff(role: PersonRole): Promise<Staff> {
+    const firstName = this.pick(FIRST_NAMES);
+    const lastName = this.pick(LAST_NAMES);
+    const staff = this.staffRepository.create({
+      name: firstName,
+      lastName,
+      phone: `${this.randomInt(100, 999)}${this.randomInt(1000000, 9999999)}`,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${this.randomInt(1, 99)}@example.com`,
+      dob: this.randomDob(),
+      role,
+      status: PersonStatus.ACTIVE,
+      wage: this.randomInt(15, 45),
+      hireDate: this.randomHireDate(),
+    });
+    return this.staffRepository.save(staff);
   }
 
   private pickPlayerRole(index: number, squadSize: number): PersonRole {
@@ -216,6 +257,13 @@ export class SeedService {
     const month = this.randomInt(1, 12);
     const day = this.randomInt(1, 28);
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  private randomHireDate(): string {
+    const yearsAgo = this.randomInt(0, 5);
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - yearsAgo);
+    return date.toISOString().slice(0, 10);
   }
 
   private randomPastDate(daysAgo: number): Date {

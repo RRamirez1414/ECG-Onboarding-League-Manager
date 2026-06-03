@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Staff } from '../staff/entities/staff.entity';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { Match } from './entities/match.entity';
@@ -10,16 +11,24 @@ export class MatchService {
   constructor(
     @InjectRepository(Match)
     private readonly matchRepository: Repository<Match>,
+    @InjectRepository(Staff)
+    private readonly staffRepository: Repository<Staff>,
   ) {}
 
-  create(payload: CreateMatchDto): Promise<Match> {
+  async create(payload: CreateMatchDto): Promise<Match> {
     this.assertDistinctTeams(payload.home, payload.away);
+    if (payload.referee) {
+      await this.ensureStaffReferee(payload.referee);
+    }
 
     const match = this.matchRepository.create({
-      ...payload,
+      home: payload.home,
+      away: payload.away,
       homeScore: payload.home_score,
       awayScore: payload.away_score,
       played: new Date(payload.played),
+      location: payload.location,
+      referee: payload.referee,
     });
     return this.matchRepository.save(match);
   }
@@ -34,6 +43,10 @@ export class MatchService {
 
   async update(id: string, payload: UpdateMatchDto): Promise<Match> {
     const match = await this.findById(id);
+    if (payload.referee) {
+      await this.ensureStaffReferee(payload.referee);
+    }
+
     Object.assign(match, {
       ...(payload.home ? { home: payload.home } : {}),
       ...(payload.away ? { away: payload.away } : {}),
@@ -41,9 +54,15 @@ export class MatchService {
       ...(payload.away_score !== undefined ? { awayScore: payload.away_score } : {}),
       ...(payload.played ? { played: new Date(payload.played) } : {}),
       ...(payload.location ? { location: payload.location } : {}),
+      ...(payload.referee !== undefined ? { referee: payload.referee } : {}),
     });
     this.assertDistinctTeams(match.home, match.away);
     return this.matchRepository.save(match);
+  }
+
+  async remove(id: string): Promise<void> {
+    const match = await this.findById(id);
+    await this.matchRepository.remove(match);
   }
 
   private assertDistinctTeams(home: string, away: string): void {
@@ -52,8 +71,10 @@ export class MatchService {
     }
   }
 
-  async remove(id: string): Promise<void> {
-    const match = await this.findById(id);
-    await this.matchRepository.remove(match);
+  private async ensureStaffReferee(refereeId: string): Promise<void> {
+    const staff = await this.staffRepository.findOne({ where: { id: refereeId } });
+    if (!staff) {
+      throw new BadRequestException('Referee must be a valid staff member');
+    }
   }
 }

@@ -20,9 +20,11 @@ export class SeedController {
       example: {
         cleared: true,
         members: 52,
+        staff: 3,
         teams: 4,
         matches: 10,
         freeAgents: 4,
+        audits: 120,
       },
     },
   })

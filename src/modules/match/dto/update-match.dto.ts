@@ -34,4 +34,9 @@ export class UpdateMatchDto {
   @IsString()
   @MaxLength(200)
   location?: string;
+
+  @ApiPropertyOptional({ description: 'Staff member assigned as referee' })
+  @IsOptional()
+  @IsUUID()
+  referee?: string;
 }

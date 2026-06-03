@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsInt, IsString, IsUUID, MaxLength, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsInt, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
 
 export class CreateMatchDto {
   @ApiProperty()
@@ -28,4 +28,9 @@ export class CreateMatchDto {
   @IsString()
   @MaxLength(200)
   location!: string;
+
+  @ApiPropertyOptional({ description: 'Staff member assigned as referee' })
+  @IsOptional()
+  @IsUUID()
+  referee?: string;
 }

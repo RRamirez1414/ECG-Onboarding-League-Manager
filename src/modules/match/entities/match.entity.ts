@@ -1,4 +1,6 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Staff } from '../../staff/entities/staff.entity';
 import { Team } from '../../team/entities/team.entity';
 
 @Entity('match')
@@ -23,6 +25,14 @@ export class Match {
 
   @Column({ type: 'varchar', length: 200 })
   location!: string;
+
+  @ApiPropertyOptional({ description: 'Foreign key to staff referee', type: String, nullable: true })
+  @Column({ type: 'uuid', nullable: true })
+  referee?: string | null;
+
+  @ManyToOne(() => Staff, { nullable: true })
+  @JoinColumn({ name: 'referee' })
+  refereeStaff?: Staff | null;
 
   @ManyToOne(() => Team, (team) => team.homeMatches, { nullable: false })
   @JoinColumn({ name: 'home' })

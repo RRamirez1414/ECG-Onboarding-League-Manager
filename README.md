@@ -22,7 +22,7 @@ npm install
 docker compose up -d postgres
 ```
 
-Postgres runs on host port **5434** (mapped from container port 5432).
+Postgres runs on host port **5435** (mapped from container port 5432). Port 5434 is avoided because it is commonly used by other local Docker projects.
 
 ### 3. Run migrations
 
@@ -30,7 +30,15 @@ Postgres runs on host port **5434** (mapped from container port 5432).
 npm run migration
 ```
 
-This creates the `person`, `team`, and `match` tables.
+This runs all pending migrations in order (initial schema, then staff/audit/referee changes). Migrations are **append-only**: do not edit files that have already been applied in shared environments.
+
+For a completely fresh database:
+
+```bash
+docker compose down -v
+docker compose up -d postgres
+npm run migration
+```
 
 ### 4. Start the API
 
@@ -97,7 +105,7 @@ Use these settings when connecting from your machine:
 | Field    | Value            |
 |----------|------------------|
 | Host     | `localhost`      |
-| Port     | `5434`           |
+| Port     | `5435`           |
 | Database | `league_manager` |
 | Username | `apiuser`        |
 | Password | `dbuser123`      |
@@ -111,7 +119,7 @@ docker compose up -d postgres
 # Stop containers
 docker compose down
 
-# Reset database volume and start fresh
+# Reset database volume and re-run full migration history
 docker compose down -v
 docker compose up -d postgres
 npm run migration
