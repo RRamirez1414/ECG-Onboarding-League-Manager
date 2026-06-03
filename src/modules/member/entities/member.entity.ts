@@ -1,54 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  BeforeInsert,
-  BeforeUpdate,
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import { PersonRole } from '../../../common/enums/person-role.enum';
-import { PersonStatus } from '../../../common/enums/person-status.enum';
+import { ChildEntity, Column, JoinColumn, ManyToOne } from 'typeorm';
+import { Person } from '../../person/entities/person.entity';
 import { Team } from '../../team/entities/team.entity';
 
-@Entity('person')
-export class Member {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
-
-  @ApiProperty()
-  @Column({ type: 'varchar', length: 120 })
-  name!: string;
-
-  @ApiProperty({ name: 'last_name' })
-  @Column({ name: 'last_name', type: 'varchar', length: 120 })
-  lastName!: string;
-
-  @ApiPropertyOptional({ type: String, nullable: true })
-  @Column({ type: 'varchar', length: 20, nullable: true })
-  phone?: string | null;
-
-  @ApiPropertyOptional({ type: String, nullable: true })
-  @Column({ type: 'varchar', length: 180, nullable: true })
-  email?: string | null;
-
-  @ApiProperty()
-  @Column({ type: 'date' })
-  dob!: string;
-
-  @ApiProperty({ enum: PersonRole })
-  @Column({ type: 'enum', enum: PersonRole })
-  role!: PersonRole;
-
-  @ApiProperty({ enum: PersonStatus })
-  @Column({ type: 'enum', enum: PersonStatus, default: PersonStatus.ACTIVE })
-  status!: PersonStatus;
-
-  @ApiProperty()
-  @Column({ type: 'int', default: 0 })
-  age!: number;
-
+@ChildEntity('member')
+export class Member extends Person {
   @ApiPropertyOptional({
     description: 'Foreign key to team',
     type: String,
@@ -69,21 +25,4 @@ export class Member {
   @ManyToOne(() => Team, (team) => team.members, { nullable: true })
   @JoinColumn({ name: 'team_id' })
   team?: Team | null;
-
-  @BeforeInsert()
-  @BeforeUpdate()
-  setAgeFromDob() {
-    if (!this.dob) {
-      return;
-    }
-
-    const birthDate = new Date(this.dob);
-    const now = new Date();
-    let age = now.getFullYear() - birthDate.getFullYear();
-    const monthDiff = now.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthDate.getDate())) {
-      age -= 1;
-    }
-    this.age = Math.max(age, 0);
-  }
 }
