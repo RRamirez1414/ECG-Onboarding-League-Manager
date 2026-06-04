@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsEmail, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { MinimumAge } from '../../../common/validators/minimum-age.validator';
 
 export class CreateStaffDto {
   @ApiProperty()
@@ -25,13 +26,13 @@ export class CreateStaffDto {
 
   @ApiProperty()
   @IsDateString()
+  @MinimumAge()
   dob!: string;
 
-  @ApiPropertyOptional({ description: 'Hourly salary (defaults to 0)' })
-  @IsOptional()
+  @ApiProperty({ description: 'Hourly salary (required on creation)' })
   @IsInt()
-  @Min(0)
-  wage?: number;
+  @Min(1)
+  wage!: number;
 
   @ApiPropertyOptional({ description: 'Date of hire (defaults to today)' })
   @IsOptional()

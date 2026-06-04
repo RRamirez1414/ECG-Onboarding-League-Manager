@@ -30,7 +30,7 @@ Postgres runs on host port **5435** (mapped from container port 5432). Port 5434
 npm run migration
 ```
 
-This runs all pending migrations in order (initial schema, then staff/audit/referee changes). Migrations are **append-only**: do not edit files that have already been applied in shared environments.
+This runs all pending migrations in order (initial schema, staff/audit/referee, then member `fee`). Migrations are **append-only**: do not edit files that have already been applied in shared environments.
 
 For a completely fresh database:
 

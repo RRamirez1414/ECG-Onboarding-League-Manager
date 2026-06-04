@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { LeagueManagerValidationService } from '../../common/services/league-manager-validation.service';
 import { Staff } from '../staff/entities/staff.entity';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
@@ -13,6 +14,7 @@ export class MatchService {
     private readonly matchRepository: Repository<Match>,
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
+    private readonly leagueValidation: LeagueManagerValidationService,
   ) {}
 
   async create(payload: CreateMatchDto): Promise<Match> {
@@ -21,12 +23,15 @@ export class MatchService {
       await this.ensureStaffReferee(payload.referee);
     }
 
+    const played = new Date(payload.played);
+    await this.leagueValidation.assertNoMatchScheduleConflict(played, payload.location);
+
     const match = this.matchRepository.create({
       home: payload.home,
       away: payload.away,
       homeScore: payload.home_score,
       awayScore: payload.away_score,
-      played: new Date(payload.played),
+      played,
       location: payload.location,
       referee: payload.referee,
     });
@@ -57,6 +62,11 @@ export class MatchService {
       ...(payload.referee !== undefined ? { referee: payload.referee } : {}),
     });
     this.assertDistinctTeams(match.home, match.away);
+
+    const played = match.played;
+    const location = match.location;
+    await this.leagueValidation.assertNoMatchScheduleConflict(played, location, id);
+
     return this.matchRepository.save(match);
   }
 

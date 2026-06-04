@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { LeagueManagerValidationService } from '../../common/services/league-manager-validation.service';
 import { PersonRole } from '../../common/enums/person-role.enum';
 import { PersonStatus } from '../../common/enums/person-status.enum';
 import { CreateStaffDto } from './dto/create-staff.dto';
@@ -12,9 +13,12 @@ export class StaffService {
   constructor(
     @InjectRepository(Staff)
     private readonly staffRepository: Repository<Staff>,
+    private readonly leagueValidation: LeagueManagerValidationService,
   ) {}
 
   create(payload: CreateStaffDto): Promise<Staff> {
+    this.leagueValidation.assertMinimumAge(payload.dob, 'Staff member');
+
     const staff = this.staffRepository.create({
       name: payload.name,
       lastName: payload.last_name,
@@ -23,7 +27,7 @@ export class StaffService {
       dob: payload.dob,
       role: PersonRole.STAFF,
       status: PersonStatus.ACTIVE,
-      wage: payload.wage ?? 0,
+      wage: payload.wage,
       hireDate: payload.hire_date ?? new Date().toISOString().slice(0, 10),
     });
     return this.staffRepository.save(staff);
@@ -39,6 +43,11 @@ export class StaffService {
 
   async update(id: string, payload: UpdateStaffDto): Promise<Staff> {
     const staff = await this.findById(id);
+
+    if (payload.dob) {
+      this.leagueValidation.assertMinimumAge(payload.dob, 'Staff member');
+    }
+
     Object.assign(staff, {
       ...(payload.name ? { name: payload.name } : {}),
       ...(payload.last_name ? { lastName: payload.last_name } : {}),

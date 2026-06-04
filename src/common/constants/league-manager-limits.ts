@@ -1,0 +1,5 @@
+export const LEAGUE_MANAGER_LIMITS = {
+  MIN_AGE: 18,
+  MAX_MEMBERS_PER_TEAM: 25,
+  DEFAULT_MEMBER_FEE: 100,
+} as const;

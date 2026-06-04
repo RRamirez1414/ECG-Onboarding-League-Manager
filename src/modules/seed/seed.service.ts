@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Audit } from '../../database/entities/audit.entity';
+import { LEAGUE_MANAGER_LIMITS } from '../../common/constants/league-manager-limits';
 import { PersonRole } from '../../common/enums/person-role.enum';
+import { LeagueManagerValidationService } from '../../common/services/league-manager-validation.service';
 import { PersonStatus } from '../../common/enums/person-status.enum';
 import { TeamStatus } from '../../common/enums/team-status.enum';
 import { MatchService } from '../match/match.service';
@@ -55,6 +57,7 @@ export class SeedService {
     private readonly auditRepository: Repository<Audit>,
     private readonly teamService: TeamService,
     private readonly matchService: MatchService,
+    private readonly leagueValidation: LeagueManagerValidationService,
   ) {}
 
   async seed(clearExisting = true) {
@@ -136,6 +139,7 @@ export class SeedService {
       if (player.id === captain.id) {
         continue;
       }
+      await this.leagueValidation.assertTeamHasCapacity(team.id);
       await this.memberRepository.update(player.id, {
         teamId: team.id,
         stats: this.randomPlayerStats(),
@@ -183,7 +187,7 @@ export class SeedService {
           away: away.id,
           home_score: homeScore,
           away_score: awayScore,
-          played: this.randomPastDate(daysAgo).toISOString(),
+          played: this.randomPastDate(daysAgo, i).toISOString(),
           location: this.pick(LOCATIONS),
           referee: this.pick(referees).id,
         }),
@@ -206,7 +210,8 @@ export class SeedService {
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${this.randomInt(1, 99)}@example.com`,
       dob: this.randomDob(),
       role: options.role,
-      status: options.status ?? PersonStatus.ACTIVE,
+      status: options.status ?? PersonStatus.INACTIVE,
+      fee: LEAGUE_MANAGER_LIMITS.DEFAULT_MEMBER_FEE,
       stats: options.role === PersonRole.COACH ? {} : this.randomPlayerStats(),
       teamId: null,
     });
@@ -266,10 +271,10 @@ export class SeedService {
     return date.toISOString().slice(0, 10);
   }
 
-  private randomPastDate(daysAgo: number): Date {
+  private randomPastDate(daysAgo: number, slot = 0): Date {
     const date = new Date();
     date.setDate(date.getDate() - daysAgo);
-    date.setHours(this.randomInt(10, 20), 0, 0, 0);
+    date.setHours(10 + (slot % 10), slot % 60, 0, 0);
     return date;
   }
 
