@@ -10,6 +10,7 @@ import {
   Min,
 } from 'class-validator';
 import { PersonStatus } from '../../../common/enums/person-status.enum';
+import { MinimumAge } from '../../../common/validators/minimum-age.validator';
 
 export class UpdateStaffDto {
   @ApiPropertyOptional()
@@ -38,6 +39,7 @@ export class UpdateStaffDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
+  @MinimumAge()
   dob?: string;
 
   @ApiPropertyOptional({ enum: PersonStatus })

@@ -13,6 +13,10 @@ export class Member extends Person {
   @Column({ name: 'team_id', type: 'uuid', nullable: true })
   teamId?: string | null;
 
+  @ApiProperty({ description: 'Initial registration fee' })
+  @Column({ type: 'int', default: 0 })
+  fee!: number;
+
   @ApiProperty({
     description: 'Member stats as JSON',
     example: { shots_on_goal: 56, total_shots_on_goal: 80 },

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { LeagueManagerValidationService } from '../../common/services/league-manager-validation.service';
 import { Match } from '../match/entities/match.entity';
 import { Member } from '../member/entities/member.entity';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -18,9 +19,11 @@ export class TeamService {
     private readonly memberRepository: Repository<Member>,
     @InjectRepository(Match)
     private readonly matchRepository: Repository<Match>,
-  ) { }
+    private readonly leagueValidation: LeagueManagerValidationService,
+  ) {}
 
   async create(payload: CreateTeamDto): Promise<Team> {
+    await this.leagueValidation.assertUniqueTeamName(payload.name);
     await this.ensureMemberExists(payload.coach);
     if (payload.captain) {
       await this.ensureMemberExists(payload.captain);
@@ -95,6 +98,9 @@ export class TeamService {
     const previousCoach = team.coach;
     const previousCaptain = team.captain;
 
+    if (payload.name) {
+      await this.leagueValidation.assertUniqueTeamName(payload.name, id);
+    }
     if (payload.coach) {
       await this.ensureMemberExists(payload.coach);
     }
@@ -129,11 +135,14 @@ export class TeamService {
 
   private async syncTeamRoles(team: Team): Promise<void> {
     const roleMemberIds = new Set([team.coach, team.captain].filter(Boolean) as string[]);
-    await Promise.all(
-      [...roleMemberIds].map((memberId) =>
-        this.memberRepository.update(memberId, { teamId: team.id }),
-      ),
-    );
+
+    for (const memberId of roleMemberIds) {
+      const member = await this.memberRepository.findOne({ where: { id: memberId } });
+      if (member && member.teamId !== team.id) {
+        await this.leagueValidation.assertTeamHasCapacity(team.id);
+        await this.memberRepository.update(memberId, { teamId: team.id });
+      }
+    }
   }
 
   private async clearRemovedRoles(

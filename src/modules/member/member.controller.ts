@@ -1,5 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UsePipes } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  memberCreateValidationPipe,
+  memberUpdateValidationPipe,
+} from '../../common/pipes/dto-validation.pipe';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberStatusDto } from './dto/update-member-status.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
@@ -12,6 +16,7 @@ export class MemberController {
   constructor(private readonly memberService: MemberService) {}
 
   @Post()
+  @UsePipes(memberCreateValidationPipe)
   @ApiOperation({ summary: 'Create a member (person + member STI row)' })
   @ApiCreatedResponse({ type: Member })
   create(@Body() payload: CreateMemberDto) {
@@ -34,6 +39,7 @@ export class MemberController {
   }
 
   @Patch(':id')
+  @UsePipes(memberUpdateValidationPipe)
   @ApiOperation({ summary: 'Update member profile data' })
   @ApiOkResponse({ type: Member })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateMemberDto) {
@@ -41,6 +47,7 @@ export class MemberController {
   }
 
   @Patch(':id/status')
+  @UsePipes(memberUpdateValidationPipe)
   @ApiOperation({ summary: 'Update member status' })
   @ApiOkResponse({ type: Member })
   updateStatus(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateMemberStatusDto) {

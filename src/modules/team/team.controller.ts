@@ -1,5 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, UsePipes } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  teamCreateValidationPipe,
+  teamUpdateValidationPipe,
+} from '../../common/pipes/dto-validation.pipe';
 import { Match } from '../match/entities/match.entity';
 import { Member } from '../member/entities/member.entity';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -12,9 +16,10 @@ import { TeamService } from './team.service';
 @ApiTags('team')
 @Controller('team')
 export class TeamController {
-  constructor(private readonly teamService: TeamService) { }
+  constructor(private readonly teamService: TeamService) {}
 
   @Post()
+  @UsePipes(teamCreateValidationPipe)
   @ApiOperation({ summary: 'Create a team' })
   @ApiCreatedResponse({ type: Team })
   create(@Body() payload: CreateTeamDto) {
@@ -55,6 +60,7 @@ export class TeamController {
   }
 
   @Patch(':id')
+  @UsePipes(teamUpdateValidationPipe)
   @ApiOperation({ summary: 'Update team' })
   @ApiOkResponse({ type: Team })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateTeamDto) {
@@ -62,6 +68,7 @@ export class TeamController {
   }
 
   @Patch(':id/status')
+  @UsePipes(teamUpdateValidationPipe)
   @ApiOperation({ summary: 'Update team status' })
   @ApiOkResponse({ type: Team })
   updateStatus(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateTeamStatusDto) {

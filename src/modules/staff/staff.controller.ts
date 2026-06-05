@@ -1,5 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UsePipes } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  staffCreateValidationPipe,
+  staffUpdateValidationPipe,
+} from '../../common/pipes/dto-validation.pipe';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { Staff } from './entities/staff.entity';
@@ -11,6 +15,7 @@ export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
   @Post()
+  @UsePipes(staffCreateValidationPipe)
   @ApiOperation({ summary: 'Create staff (person STI row)' })
   @ApiCreatedResponse({ type: Staff })
   create(@Body() payload: CreateStaffDto) {
@@ -26,6 +31,7 @@ export class StaffController {
   }
 
   @Patch(':id')
+  @UsePipes(staffUpdateValidationPipe)
   @ApiOperation({ summary: 'Update staff' })
   @ApiOkResponse({ type: Staff })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateStaffDto) {

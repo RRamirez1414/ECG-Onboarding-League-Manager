@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CommonModule } from './common/common.module';
 import { AuditSubscriber } from './database/subscribers/audit.subscriber';
 import { MatchModule } from './modules/match/match.module';
 import { MemberModule } from './modules/member/member.module';
@@ -10,6 +11,7 @@ import { TeamModule } from './modules/team/team.module';
 
 @Module({
   imports: [
+    CommonModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST ?? 'localhost',

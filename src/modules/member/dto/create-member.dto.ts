@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEmail, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsDateString, IsEmail, IsEnum, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { PersonRole } from '../../../common/enums/person-role.enum';
+import { HasContact } from '../../../common/validators/has-contact.validator';
+import { MinimumAge } from '../../../common/validators/minimum-age.validator';
 
 export class CreateMemberDto {
   @ApiProperty()
@@ -22,13 +24,21 @@ export class CreateMemberDto {
   @ApiPropertyOptional({ type: String, nullable: true })
   @IsOptional()
   @IsEmail()
+  @HasContact()
   email?: string;
 
   @ApiProperty()
   @IsDateString()
+  @MinimumAge()
   dob!: string;
 
   @ApiProperty({ enum: PersonRole })
   @IsEnum(PersonRole)
   role!: PersonRole;
+
+  @ApiPropertyOptional({ description: 'Initial registration fee (defaults to league minimum if omitted)' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  fee?: number;
 }

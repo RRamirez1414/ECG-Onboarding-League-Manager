@@ -1,5 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UsePipes } from '@nestjs/common';
 import { ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import {
+  matchCreateValidationPipe,
+  matchUpdateValidationPipe,
+} from '../../common/pipes/dto-validation.pipe';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { Match } from './entities/match.entity';
@@ -11,6 +15,7 @@ export class MatchController {
   constructor(private readonly matchService: MatchService) {}
 
   @Post()
+  @UsePipes(matchCreateValidationPipe)
   @ApiOperation({ summary: 'Create match' })
   @ApiCreatedResponse({ type: Match })
   create(@Body() payload: CreateMatchDto) {
@@ -26,6 +31,7 @@ export class MatchController {
   }
 
   @Patch(':id')
+  @UsePipes(matchUpdateValidationPipe)
   @ApiOperation({ summary: 'Update match' })
   @ApiOkResponse({ type: Match })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() payload: UpdateMatchDto) {

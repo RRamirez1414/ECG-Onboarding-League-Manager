@@ -1,6 +1,18 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEmail, IsEnum, IsObject, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsDateString,
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { PersonRole } from '../../../common/enums/person-role.enum';
+import { MinimumAge } from '../../../common/validators/minimum-age.validator';
 
 export class UpdateMemberDto {
   @ApiPropertyOptional()
@@ -29,6 +41,7 @@ export class UpdateMemberDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
+  @MinimumAge()
   dob?: string;
 
   @ApiPropertyOptional({ enum: PersonRole })
@@ -45,4 +58,10 @@ export class UpdateMemberDto {
   @IsOptional()
   @IsObject()
   stats?: Record<string, unknown>;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  fee?: number;
 }
